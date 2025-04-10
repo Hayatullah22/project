@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Route Finder</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .header img {
+            height: 40px;
+        }
+        .search-container {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .search-container input {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 200px;
+        }
+        .search-container button {
+            background-color: #d32f2f;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .map-container {
+            width: 100%;
+            height: 80vh;
+        }
+        .result {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 50%;
+            text-align: center;
+            display: none;
+        }
+        .graph-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            width: 80%;
+            text-align: center;
+            display: none;
+        }
+        .graph-container img {
+            width: 100%;
+            max-width: 600px;
+            border: 2px solid #003366;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="logo.png" alt="Airline Logo">
+        <nav>
+            <span>BOOK & MANAGE</span>
+            <span>WHERE WE FLY</span>
+            <span>SUPPORT</span>
+        </nav>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="from" placeholder="From">
+        <input type="text" id="to" placeholder="To">
+        <button onclick="findRoute()">Search</button>
+    </div>
+
+    <div class="map-container">
+        <iframe src="https://www.google.com/maps" width="100%" height="100%" style="border:0;"></iframe>
+    </div>
+
+    <div id="result" class="result"></div>
+    <div id="graph-container" class="graph-container">
+        <img id="graphImage" src="" alt="Graph will appear here">
+    </div>
+
+    <script>
+        async function findRoute() {
+            const from = document.getElementById('from').value.trim().toUpperCase();
+            const to = document.getElementById('to').value.trim().toUpperCase();
+
+            if (!from || !to) {
+                alert('Please enter both airports.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/find_alternative_paths?start=${from}&end=${to}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('result').innerHTML = `<b>Error:</b> ${data.error}`;
+                } else {
+                    document.getElementById('result').innerHTML = `
+                        <b>🔴 Shortest Path:</b> ${data.shortest_path.path.join(' ➔ ')} (${data.shortest_path.distance} km)<br>
+                        <b>🟢 Alternative Path:</b> ${data.alternative_route ? data.alternative_route.path.join(' ➔ ') + ` (${data.alternative_route.distance} km)` : 'None'}
+                    `;
+                }
+                document.getElementById('result').style.display = 'block';
+                
+                // Fetch and display the graph
+                document.getElementById('graphImage').src = `http://127.0.0.1:5000/graph?start=${from}&end=${to}&t=${Date.now()}`;
+                document.getElementById('graph-container').style.display = 'block';
+            } catch (error) {
+                alert('Failed to fetch data.');
+            }
+        }
+    </script>
+</body>
+</html>
